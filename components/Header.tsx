@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   ActionIcon,
   Container,
@@ -15,6 +16,11 @@ import { useCfkumaTheme } from '@/util/theme'
 import { IconMoon, IconPhoto, IconSettings, IconSparkles, IconSun } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
+function formatClockTime(date: Date) {
+  const pad = (value: number) => value.toString().padStart(2, '0')
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
 export default function Header({
   style,
   config = pageConfig,
@@ -24,6 +30,7 @@ export default function Header({
 }) {
   const { t } = useTranslation('common')
   const { setColorScheme } = useMantineColorScheme()
+  const [clockTime, setClockTime] = useState('')
   const computedColorScheme = useComputedColorScheme('light', {
     getInitialValueInEffect: false,
   })
@@ -51,12 +58,28 @@ export default function Header({
   const skinLabel = skin === 'aurora' ? t('Switch to plain skin') : t('Switch to aurora skin')
   const SkinIcon = skin === 'aurora' ? IconPhoto : IconSparkles
   const adminLabel = t('Open admin console')
+  const visibleClockTime = clockTime || '--:--:--'
+
+  useEffect(() => {
+    const updateClock = () => setClockTime(formatClockTime(new Date()))
+    updateClock()
+    const timer = window.setInterval(updateClock, 1000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   return (
     <header className={classes.header} style={style}>
       <Container size="xl" className={classes.inner}>
         <div className={classes.brand}>
+          <time
+            className={classes.clock}
+            dateTime={clockTime || undefined}
+            aria-label={`Current time ${visibleClockTime}`}
+          >
+            {visibleClockTime}
+          </time>
           <a
+            className={classes.logoLink}
             href={isHome ? 'https://github.com/TyrEamon/CFkuma' : '/'}
             target={isHome ? '_blank' : undefined}
           >
