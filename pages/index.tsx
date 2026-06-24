@@ -1,12 +1,14 @@
 import Head from 'next/head'
 
 import { Inter } from 'next/font/google'
+import { useEffect, useState } from 'react'
 import { MonitorTarget } from '@/types/config'
 import { maintenances, pageConfig } from '@/uptime.config'
 import OverallStatus from '@/components/OverallStatus'
 import Header from '@/components/Header'
 import MonitorList from '@/components/MonitorList'
-import { Center, Text } from '@mantine/core'
+import { Center, Container, Text } from '@mantine/core'
+import type { CSSProperties } from 'react'
 import MonitorDetail from '@/components/MonitorDetail'
 import Footer from '@/components/Footer'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +16,10 @@ import { CompactedMonitorStateWrapper, getFromStore } from '@/worker/src/store'
 
 export const runtime = 'experimental-edge'
 const inter = Inter({ subsets: ['latin'] })
+const detailSurfaceStyle: CSSProperties = {
+  borderRadius: 8,
+  padding: 16,
+}
 
 export default function Home({
   compactedStateStr,
@@ -25,19 +31,25 @@ export default function Home({
   statusPageLink?: string
 }) {
   const { t } = useTranslation('common')
+  const [monitorId, setMonitorId] = useState('')
   let state = new CompactedMonitorStateWrapper(compactedStateStr).uncompact()
 
   // Specify monitorId in URL hash to view a specific monitor (can be used in iframe)
-  const monitorId = window.location.hash.substring(1)
+  useEffect(() => {
+    const updateMonitorId = () => setMonitorId(window.location.hash.substring(1))
+    updateMonitorId()
+    window.addEventListener('hashchange', updateMonitorId)
+    return () => window.removeEventListener('hashchange', updateMonitorId)
+  }, [])
   if (monitorId) {
     const monitor = monitors.find((monitor) => monitor.id === monitorId)
     if (!monitor || !state) {
       return <Text fw={700}>{t('Monitor not found', { id: monitorId })}</Text>
     }
     return (
-      <div style={{ maxWidth: '810px' }}>
+      <Container size="md" mt="xl" px="md" className="cfkuma-surface" style={detailSurfaceStyle}>
         <MonitorDetail monitor={monitor} state={state} />
-      </div>
+      </Container>
     )
   }
 
@@ -75,16 +87,20 @@ export async function getServerSideProps() {
 
   // Only present these values to client
   const monitors = workerConfig.monitors.map((monitor) => {
-    return {
+    const clientMonitor: Pick<MonitorTarget, 'id' | 'name'> & Partial<MonitorTarget> = {
       id: monitor.id,
       name: monitor.name,
-      // @ts-ignore
-      tooltip: monitor?.tooltip,
-      // @ts-ignore
-      statusPageLink: monitor?.statusPageLink,
-      // @ts-ignore
-      hideLatencyChart: monitor?.hideLatencyChart,
     }
+
+    if (monitor.tooltip !== undefined) clientMonitor.tooltip = monitor.tooltip
+    if (monitor.statusPageLink !== undefined) clientMonitor.statusPageLink = monitor.statusPageLink
+    if (monitor.icon !== undefined) clientMonitor.icon = monitor.icon
+    if (monitor.category !== undefined) clientMonitor.category = monitor.category
+    if (monitor.hideLatencyChart !== undefined) {
+      clientMonitor.hideLatencyChart = monitor.hideLatencyChart
+    }
+
+    return clientMonitor
   })
 
   return { props: { compactedStateStr, monitors } }

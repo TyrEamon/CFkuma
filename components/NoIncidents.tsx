@@ -6,6 +6,7 @@ export default function NoIncidentsAlert({ style }: { style?: React.CSSPropertie
   const { t } = useTranslation('common')
   return (
     <Alert
+      className="cfkuma-surface"
       icon={<IconInfoCircle />}
       title={
         <span

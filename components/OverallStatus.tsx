@@ -1,9 +1,9 @@
-import { MaintenanceConfig, MonitorTarget } from '@/types/config'
-import { Center, Container, Title, Collapse, Button, Box } from '@mantine/core'
-import { IconCircleCheck, IconAlertCircle, IconPlus, IconMinus } from '@tabler/icons-react'
+import { MaintenanceConfig, MonitorState, MonitorTarget } from '@/types/config'
+import { Center, Collapse, Container, Title } from '@mantine/core'
+import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import MaintenanceAlert from './MaintenanceAlert'
-import { pageConfig } from '@/uptime.config'
+import StatsOverview from './StatsOverview'
 import { useTranslation } from 'react-i18next'
 
 function useWindowVisibility() {
@@ -21,14 +21,11 @@ export default function OverallStatus({
   maintenances,
   monitors,
 }: {
-  state: { overallUp: number; overallDown: number; lastUpdate: number }
+  state: MonitorState
   maintenances: MaintenanceConfig[]
   monitors: MonitorTarget[]
 }) {
   const { t } = useTranslation('common')
-  let group = pageConfig.group
-  let groupedMonitor = (group && Object.keys(group).length > 0) || false
-
   let statusString = ''
   let icon = <IconAlertCircle style={{ width: 64, height: 64, color: '#b91c1c' }} />
   if (state.overallUp === 0 && state.overallDown === 0) {
@@ -86,7 +83,7 @@ export default function OverallStatus({
     }))
 
   return (
-    <Container size="md" mt="xl">
+    <Container size="xl" mt="xl" px="md">
       <Center>{icon}</Center>
       <Title mt="sm" style={{ textAlign: 'center' }} order={1}>
         {statusString}
@@ -97,6 +94,8 @@ export default function OverallStatus({
           seconds: currentTime - state.lastUpdate,
         })}
       </Title>
+
+      <StatsOverview monitors={monitors} state={state} />
 
       {/* Upcoming Maintenance */}
       {upcomingMaintenances.length > 0 && (
@@ -116,7 +115,7 @@ export default function OverallStatus({
               <MaintenanceAlert
                 key={`upcoming-${idx}`}
                 maintenance={maintenance}
-                style={{ maxWidth: groupedMonitor ? '897px' : '865px' }}
+                style={{ maxWidth: '100%' }}
                 upcoming
               />
             ))}
@@ -129,7 +128,7 @@ export default function OverallStatus({
         <MaintenanceAlert
           key={`active-${idx}`}
           maintenance={maintenance}
-          style={{ maxWidth: groupedMonitor ? '897px' : '865px' }}
+          style={{ maxWidth: '100%' }}
         />
       ))}
     </Container>

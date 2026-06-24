@@ -20,6 +20,7 @@ export default function MaintenanceAlert({
 
   return (
     <Alert
+      className="cfkuma-surface"
       icon={<IconAlertTriangle />}
       title={
         <span

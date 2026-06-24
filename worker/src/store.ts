@@ -6,8 +6,97 @@ import {
   MonitorStateCompacted,
 } from '../../types/config'
 
-export async function getFromStore(env: Env, key: string): Promise<string | null> {
-  const stmt = env.UPTIMEFLARE_D1.prepare('SELECT value FROM uptimeflare WHERE key = ?')
+function numberToLittleEndianHex(value: number, bytes: number): string {
+  let remaining = Math.trunc(value)
+  let hex = ''
+
+  for (let i = 0; i < bytes; i++) {
+    const byte = remaining % 256
+    hex += byte.toString(16).padStart(2, '0')
+    remaining = Math.floor(remaining / 256)
+  }
+
+  return hex
+}
+
+function encodeUint32(values: number[]): string {
+  return values.map((value) => numberToLittleEndianHex(value, 4)).join('')
+}
+
+function encodeUint16(values: number[]): string {
+  return values.map((value) => numberToLittleEndianHex(value, 2)).join('')
+}
+
+function hexToUint8Array(hex: string): Uint8Array {
+  const ret = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < hex.length; i += 2) {
+    ret[i / 2] = parseInt(hex.slice(i, i + 2), 16)
+  }
+  return ret
+}
+
+function decodeUint32(hex: string): number {
+  return new Uint32Array(hexToUint8Array(hex).buffer)[0]
+}
+
+function decodeUint16(hex: string): number {
+  return new Uint16Array(hexToUint8Array(hex).buffer)[0]
+}
+
+function createLatencySeries(now: number, basePing: number, variance: number) {
+  const times = Array.from({ length: 24 }, (_, index) => now - (23 - index) * 5 * 60)
+  const pings = times.map((_, index) => basePing + ((index * 7) % variance))
+
+  return {
+    loc: {
+      v: ['SJC'],
+      c: [times.length],
+    },
+    ping: encodeUint16(pings),
+    time: encodeUint32(times),
+  }
+}
+
+function createLocalDevMockState(): string {
+  const now = Math.round(Date.now() / 1000)
+  const monitorStart = now - 90 * 24 * 60 * 60
+  const recentIncidentStart = now - 45 * 60
+  const recentIncidentEnd = now - 35 * 60
+
+  const state: MonitorStateCompacted = {
+    lastUpdate: now,
+    overallUp: 2,
+    overallDown: 0,
+    incident: {
+      foo_monitor: {
+        start: [[monitorStart], [recentIncidentStart]],
+        end: [monitorStart, recentIncidentEnd],
+        error: [['dummy'], ['Local dev mock: sample HTTP timeout']],
+      },
+      test_tcp_monitor: {
+        start: [[monitorStart]],
+        end: [monitorStart],
+        error: [['dummy']],
+      },
+    },
+    latency: {
+      foo_monitor: createLatencySeries(now, 82, 37),
+      test_tcp_monitor: createLatencySeries(now, 124, 53),
+    },
+  }
+
+  return JSON.stringify(state)
+}
+
+export async function getFromStore(env: Env | undefined, key: string): Promise<string | null> {
+  const db = env?.UPTIMEFLARE_D1
+
+  if (db == null) {
+    // Local next dev has no Cloudflare D1 binding; return mock state for UI iteration only.
+    return key === 'state' ? createLocalDevMockState() : null
+  }
+
+  const stmt = db.prepare('SELECT value FROM uptimeflare WHERE key = ?')
   const result = await stmt.bind(key).first<{ value: string }>()
   return result?.value || null
 }
@@ -51,21 +140,6 @@ export class CompactedMonitorStateWrapper {
       latency: {},
     }
 
-    const hex2Uint8Arr = (hex: string): Uint8Array => {
-      // @ts-expect-error This method is not available in Node.js 22.x, but available in Cloudflare Workers and new browsers
-      if (Uint8Array.fromHex) {
-        // @ts-expect-error
-        return Uint8Array.fromHex(hex)
-      } else {
-        console.warn('Uint8Array.fromHex is not available, using parseInt as fallback. Consider upgrading your browser.')
-        const ret = new Uint8Array(hex.length / 2)
-        for (let i = 0; i < hex.length; i += 2) {
-          ret[i / 2] = parseInt(hex.slice(i, i + 2), 16)
-        }
-        return ret
-      }
-    }
-
     Object.keys(this.data.incident).forEach((monitorId) => {
       state.incident[monitorId] = []
       const incidents = this.data.incident[monitorId]
@@ -98,8 +172,8 @@ export class CompactedMonitorStateWrapper {
         }
       })
 
-      const timeArr = new Uint32Array(hex2Uint8Arr(latencies.time).buffer)
-      const pingArr = new Uint16Array(hex2Uint8Arr(latencies.ping).buffer)
+      const timeArr = new Uint32Array(hexToUint8Array(latencies.time).buffer)
+      const pingArr = new Uint16Array(hexToUint8Array(latencies.ping).buffer)
 
       if (timeArr.length !== pingArr.length || timeArr.length !== locUncompacted.length) {
         throw new Error(
@@ -215,10 +289,8 @@ export class CompactedMonitorStateWrapper {
     let latencies = this.data.latency[monitorId]
 
     return {
-      // @ts-expect-error
-      time: new Uint32Array(Uint8Array.fromHex(latencies.time.slice(0, 8)).buffer)[0],
-      // @ts-expect-error
-      ping: new Uint16Array(Uint8Array.fromHex(latencies.ping.slice(0, 4)).buffer)[0],
+      time: decodeUint32(latencies.time.slice(0, 8)),
+      ping: decodeUint16(latencies.ping.slice(0, 4)),
       loc: latencies.loc.v[0],
     }
   }
@@ -227,10 +299,8 @@ export class CompactedMonitorStateWrapper {
     let latencies = this.data.latency[monitorId]
 
     return {
-      // @ts-expect-error
-      time: new Uint32Array(Uint8Array.fromHex(latencies.time.slice(-8)).buffer)[0],
-      // @ts-expect-error
-      ping: new Uint16Array(Uint8Array.fromHex(latencies.ping.slice(-4)).buffer)[0],
+      time: decodeUint32(latencies.time.slice(-8)),
+      ping: decodeUint16(latencies.ping.slice(-4)),
       loc: latencies.loc.v[latencies.loc.v.length - 1],
     }
   }

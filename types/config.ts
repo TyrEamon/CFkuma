@@ -29,11 +29,15 @@ export type PageConfigLink = {
   highlight?: boolean
 }
 
+export type MonitorCategory = 'website' | 'api' | 'container' | 'proxy' | 'domain'
+
 export type MonitorTarget = {
   id: string
   name: string
   method: string
   target: string
+  icon?: string
+  category?: MonitorCategory
   tooltip?: string
   statusPageLink?: string
   hideLatencyChart?: boolean

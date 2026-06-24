@@ -3,6 +3,11 @@
   margin-bottom: rem(100px);
   background-color: var(--mantine-color-body);
   border-bottom: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    backdrop-filter 180ms ease;
 }
 
 .inner {
@@ -10,6 +15,32 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: rem(12px);
+}
+
+html[data-cfkuma-skin='aurora'] .header {
+  background-color: light-dark(rgba(255, 255, 255, 0.72), rgba(15, 23, 42, 0.68));
+  border-bottom-color: light-dark(rgba(148, 163, 184, 0.34), rgba(203, 213, 225, 0.16));
+  box-shadow: 0 10px 30px light-dark(rgba(15, 23, 42, 0.06), rgba(0, 0, 0, 0.22));
+  backdrop-filter: blur(12px) saturate(1.08);
+}
+
+.brand {
+  flex: 0 1 auto;
+  min-width: rem(92px);
+}
+
+.navWrap {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.links {
+  min-width: 0;
+}
+
+.themeControls {
+  flex: 0 0 auto;
 }
 
 .link {
@@ -21,6 +52,10 @@
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
   font-size: var(--mantine-font-size-sm);
   font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 
   @mixin hover {
     background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
@@ -29,5 +64,25 @@
   [data-mantine-color-scheme] &[data-active] {
     background-color: var(--mantine-color-blue-filled);
     color: var(--mantine-color-white);
+  }
+}
+
+html[data-cfkuma-skin='aurora'] .link {
+  color: light-dark(var(--mantine-color-gray-8), var(--mantine-color-gray-1));
+}
+
+html[data-cfkuma-skin='aurora'] .link:hover {
+  background-color: light-dark(rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08));
+}
+
+@media (max-width: $mantine-breakpoint-sm) {
+  .inner {
+    padding-left: rem(10px);
+    padding-right: rem(10px);
+  }
+
+  .link {
+    padding: rem(8px) rem(9px);
+    font-size: rem(13px);
   }
 }

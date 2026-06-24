@@ -25,6 +25,9 @@ const workerConfig: WorkerConfig = {
       id: 'foo_monitor',
       // `name` is used at status page and callback message
       name: 'My API Monitor',
+      // [OPTIONAL] `category` and `icon` control status page card icon styling.
+      category: 'api',
+      icon: 'api',
       // `method` should be a valid HTTP Method
       method: 'GET',
       // `target` is a valid URL
@@ -59,6 +62,8 @@ const workerConfig: WorkerConfig = {
     {
       id: 'test_tcp_monitor',
       name: 'Example TCP Monitor',
+      category: 'proxy',
+      icon: 'shield',
       // `method` should be `TCP_PING` for tcp monitors
       method: 'TCP_PING',
       // `target` should be `host:port` for tcp monitors
