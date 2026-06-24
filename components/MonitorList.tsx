@@ -1,10 +1,10 @@
 import { MonitorState, MonitorTarget } from '@/types/config'
 import { Accordion, Container, Group, SimpleGrid, Text } from '@mantine/core'
 import MonitorCard from './MonitorCard'
-import { pageConfig } from '@/uptime.config'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getMonitorDownCount } from '@/components/monitorMetrics'
+import { PageConfigGroup } from '@/types/config'
 
 function getStatusTextColor(state: MonitorState, ids: string[]) {
   const downCount = getMonitorDownCount(state, ids)
@@ -30,12 +30,13 @@ function MonitorGrid({ monitors, state }: { monitors: MonitorTarget[]; state: Mo
 export default function MonitorList({
   monitors,
   state,
+  group,
 }: {
   monitors: MonitorTarget[]
   state: MonitorState
+  group?: PageConfigGroup
 }) {
   const { t } = useTranslation('common')
-  const group = pageConfig.group
   const groupedMonitor = group && Object.keys(group).length > 0
   let content
 

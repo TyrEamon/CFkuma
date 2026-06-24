@@ -9,6 +9,14 @@ body {
   background: var(--mantine-color-body);
 }
 
+:root {
+  --cfkuma-aurora-light-overlay-start: 0.78;
+  --cfkuma-aurora-light-overlay-end: 0.68;
+  --cfkuma-aurora-dark-overlay-start: 0.68;
+  --cfkuma-aurora-dark-overlay-end: 0.78;
+  --cfkuma-aurora-bg-blur: 0px;
+}
+
 .cfkuma-app-shell {
   position: relative;
   min-height: 100vh;
@@ -38,21 +46,50 @@ html[data-cfkuma-skin='aurora'] .cfkuma-background {
   z-index: -2;
   display: block;
   pointer-events: none;
+  overflow: hidden;
+}
+
+html[data-cfkuma-skin='aurora'] .cfkuma-background::before {
+  position: absolute;
+  inset: calc(var(--cfkuma-aurora-bg-blur) * -2);
+  content: '';
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
+  filter: blur(var(--cfkuma-aurora-bg-blur));
+  transform: translateZ(0);
 }
 
-html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .cfkuma-background {
-  background-image:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.78), rgba(241, 245, 249, 0.68)),
-    var(--cfkuma-aurora-bg-light);
+html[data-cfkuma-skin='aurora'] .cfkuma-background::after {
+  position: absolute;
+  inset: 0;
+  content: '';
 }
 
-html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='dark'] .cfkuma-background {
-  background-image:
-    linear-gradient(180deg, rgba(2, 6, 23, 0.68), rgba(15, 23, 42, 0.78)),
-    var(--cfkuma-aurora-bg-dark);
+html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .cfkuma-background::after {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(248, 250, 252, var(--cfkuma-aurora-light-overlay-start)),
+      rgba(241, 245, 249, var(--cfkuma-aurora-light-overlay-end))
+    );
+}
+
+html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .cfkuma-background::before {
+  background-image: var(--cfkuma-aurora-bg-light);
+}
+
+html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='dark'] .cfkuma-background::after {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2, 6, 23, var(--cfkuma-aurora-dark-overlay-start)),
+      rgba(15, 23, 42, var(--cfkuma-aurora-dark-overlay-end))
+    );
+}
+
+html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='dark'] .cfkuma-background::before {
+  background-image: var(--cfkuma-aurora-bg-dark);
 }
 
 html[data-cfkuma-skin='aurora'] .cfkuma-app-shell::before {

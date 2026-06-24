@@ -1,6 +1,7 @@
-import { maintenances, workerConfig } from '@/uptime.config'
+import { maintenances } from '@/uptime.config'
 import { NextRequest } from 'next/server'
 import { CompactedMonitorStateWrapper, getFromStore } from '@/worker/src/store'
+import { getRuntimeConfig } from '@/util/runtimeConfig'
 
 export const runtime = 'edge'
 
@@ -12,6 +13,7 @@ const headers = {
 }
 
 export default async function handler(req: NextRequest): Promise<Response> {
+  const runtimeConfig = await getRuntimeConfig(process.env as any)
   const compactedState = new CompactedMonitorStateWrapper(
     await getFromStore(process.env as any, 'state')
   )
@@ -25,7 +27,17 @@ export default async function handler(req: NextRequest): Promise<Response> {
 
   let monitors: any = {}
 
-  for (let monitor of workerConfig.monitors) {
+  for (let monitor of runtimeConfig.workerConfig.monitors) {
+    if (compactedState.incidentLen(monitor.id) === 0 || compactedState.latencyLen(monitor.id) === 0) {
+      monitors[monitor.id] = {
+        up: null,
+        latency: null,
+        location: null,
+        message: 'No data yet',
+      }
+      continue
+    }
+
     const lastIncident = compactedState.getIncident(
       monitor.id,
       compactedState.incidentLen(monitor.id) - 1

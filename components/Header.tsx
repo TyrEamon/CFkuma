@@ -10,12 +10,18 @@ import {
 } from '@mantine/core'
 import classes from '@/styles/Header.module.css'
 import { pageConfig } from '@/uptime.config'
-import { PageConfigLink } from '@/types/config'
+import { PageConfig, PageConfigLink } from '@/types/config'
 import { useCfkumaTheme } from '@/util/theme'
 import { IconMoon, IconPhoto, IconSparkles, IconSun } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
-export default function Header({ style }: { style?: React.CSSProperties }) {
+export default function Header({
+  style,
+  config = pageConfig,
+}: {
+  style?: React.CSSProperties
+  config?: PageConfig
+}) {
   const { t } = useTranslation('common')
   const { setColorScheme } = useMantineColorScheme()
   const computedColorScheme = useComputedColorScheme('light', {
@@ -37,7 +43,7 @@ export default function Header({ style }: { style?: React.CSSProperties }) {
     )
   }
 
-  const links = [{ label: t('Incidents'), link: '/incidents' }, ...(pageConfig.links || [])]
+  const links = [{ label: t('Incidents'), link: '/incidents' }, ...(config.links || [])]
   const nextColorScheme = computedColorScheme === 'dark' ? 'light' : 'dark'
   const colorSchemeLabel =
     nextColorScheme === 'dark' ? t('Switch to dark mode') : t('Switch to light mode')
@@ -54,7 +60,7 @@ export default function Header({ style }: { style?: React.CSSProperties }) {
             target={isHome ? '_blank' : undefined}
           >
             <Image
-              src={pageConfig.logo ?? '/logo.svg'}
+              src={config.logo ?? '/logo.svg'}
               h={56}
               w={{ base: 122, sm: 190 }}
               fit="contain"

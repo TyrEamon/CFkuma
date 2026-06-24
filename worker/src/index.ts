@@ -4,6 +4,7 @@ import { workerConfig } from '../../uptime.config'
 import { doMonitor, getStatus } from './monitor'
 import { formatAndNotify, getWorkerLocation } from './util'
 import { CompactedMonitorStateWrapper, getFromStore, setToStore } from './store'
+import { getRuntimeConfig } from '../../util/runtimeConfig'
 import pLimit from 'p-limit'
 
 export interface Env {
@@ -18,6 +19,8 @@ const Worker = {
 
     // Create a wrapped MonitorState from stored compacted state
     const state = new CompactedMonitorStateWrapper(await getFromStore(env, 'state'))
+    const runtimeConfig = await getRuntimeConfig(env)
+    const runtimeWorkerConfig = runtimeConfig.workerConfig
     state.data.overallDown = 0
     state.data.overallUp = 0
 
@@ -30,7 +33,7 @@ const Worker = {
     let checkQueue: Promise<CheckResult>[] = []
     let checkResult: Record<string, CheckResult> = {};
     const limit = pLimit(5);
-    for (const monitor of workerConfig.monitors) {
+    for (const monitor of runtimeWorkerConfig.monitors) {
       checkQueue.push(limit(() => doMonitor(monitor, workerLocation, env)))
     }
     for (const result of await Promise.all(checkQueue)) {
@@ -38,7 +41,7 @@ const Worker = {
     }
 
     // Update each monitor's state based on check results
-    for (const monitor of workerConfig.monitors) {
+    for (const monitor of runtimeWorkerConfig.monitors) {
       console.log(`Processing monitor result: ${monitor.name} (${monitor.id})`)
 
       let monitorStatusChanged = false
@@ -72,15 +75,15 @@ const Worker = {
           try {
             if (
               // grace period not set OR ...
-              workerConfig.notification?.gracePeriod === undefined ||
+              runtimeWorkerConfig.notification?.gracePeriod === undefined ||
               // only when we have sent a notification for DOWN status, we will send a notification for UP status (within 30 seconds of possible drift)
               currentTimeSecond - lastIncident.start[0] >=
-                (workerConfig.notification.gracePeriod + 1) * 60 - 30
+                (runtimeWorkerConfig.notification.gracePeriod + 1) * 60 - 30
             ) {
               await formatAndNotify(monitor, true, lastIncident.start[0], currentTimeSecond, 'OK')
             } else {
               console.log(
-                `grace period (${workerConfig.notification?.gracePeriod}m) not met, skipping webhook UP notification for ${monitor.name}`
+                `grace period (${runtimeWorkerConfig.notification?.gracePeriod}m) not met, skipping webhook UP notification for ${monitor.name}`
               )
             }
 
@@ -124,21 +127,21 @@ const Worker = {
             // monitor status changed AND...
             (monitorStatusChanged &&
               // grace period not set OR ...
-              (workerConfig.notification?.gracePeriod === undefined ||
+              (runtimeWorkerConfig.notification?.gracePeriod === undefined ||
                 // have sent a notification for DOWN status
                 currentTimeSecond - currentIncident.start[0] >=
-                  (workerConfig.notification.gracePeriod + 1) * 60 - 30)) ||
+                  (runtimeWorkerConfig.notification.gracePeriod + 1) * 60 - 30)) ||
             // grace period is set AND...
-            (workerConfig.notification?.gracePeriod !== undefined &&
+            (runtimeWorkerConfig.notification?.gracePeriod !== undefined &&
               // grace period is met
               currentTimeSecond - currentIncident.start[0] >=
-                workerConfig.notification.gracePeriod * 60 - 30 &&
+                runtimeWorkerConfig.notification.gracePeriod * 60 - 30 &&
               currentTimeSecond - currentIncident.start[0] <
-                workerConfig.notification.gracePeriod * 60 + 30)
+                runtimeWorkerConfig.notification.gracePeriod * 60 + 30)
           ) {
             if (
               currentIncident.start[0] !== currentTimeSecond &&
-              workerConfig.notification?.skipErrorChangeNotification
+              runtimeWorkerConfig.notification?.skipErrorChangeNotification
             ) {
               console.log(
                 'Skipping notification for following error reason change due to user config'
@@ -154,7 +157,7 @@ const Worker = {
             }
           } else {
             console.log(
-              `Grace period (${workerConfig.notification
+              `Grace period (${runtimeWorkerConfig.notification
                 ?.gracePeriod}m) not met or no change (currently down for ${
                 currentTimeSecond - currentIncident.start[0]
               }s, changed ${monitorStatusChanged}), skipping webhook DOWN notification for ${
@@ -239,7 +242,7 @@ const Worker = {
     if (
       statusChanged ||
       currentTimeSecond - state.data.lastUpdate >=
-        (workerConfig.kvWriteCooldownMinutes ?? 3) * 60 - 10 // Allow for 10 seconds of clock drift
+        (runtimeWorkerConfig.kvWriteCooldownMinutes ?? 3) * 60 - 10 // Allow for 10 seconds of clock drift
     ) {
       console.log('Updating state...')
       state.data.lastUpdate = currentTimeSecond

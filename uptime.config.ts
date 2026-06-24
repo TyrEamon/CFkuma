@@ -17,6 +17,9 @@ const pageConfig: PageConfig = {
 }
 
 const workerConfig: WorkerConfig = {
+  // Fallback for /admin Basic auth, format `<USERNAME>:<PASSWORD>`.
+  // Prefer setting ADMIN_PASSWORD_PROTECTION as an environment variable / secret.
+  // adminPasswordProtection: 'admin:change-me',
   // Define all your monitors here
   monitors: [
     // Example HTTP Monitor

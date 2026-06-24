@@ -21,6 +21,18 @@ variable "enable_do_migration" {
   default = false
 }
 
+variable "ADMIN_PASSWORD_PROTECTION" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
+variable "PASSWORD_PROTECTION" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
 resource "cloudflare_d1_database" "uptimeflare_d1" {
   account_id            = var.CLOUDFLARE_ACCOUNT_ID
   name                  = "uptimeflare_d1"
@@ -88,6 +100,10 @@ resource "cloudflare_pages_project" "uptimeflare" {
       }
       compatibility_date  = "2025-04-02"
       compatibility_flags = ["nodejs_compat"]
+      environment_variables = merge(
+        var.ADMIN_PASSWORD_PROTECTION == "" ? {} : { ADMIN_PASSWORD_PROTECTION = var.ADMIN_PASSWORD_PROTECTION },
+        var.PASSWORD_PROTECTION == "" ? {} : { PASSWORD_PROTECTION = var.PASSWORD_PROTECTION }
+      )
       fail_open           = false
     }
   }
