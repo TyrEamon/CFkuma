@@ -149,6 +149,7 @@ export async function getServerSideProps() {
   const monitors: MonitorTarget[] = runtimeConfig.workerConfig.monitors.map((monitor) => ({
     id: monitor.id,
     name: monitor.name,
+    checkInterval: monitor.checkInterval,
   })) as MonitorTarget[]
   return {
     props: {

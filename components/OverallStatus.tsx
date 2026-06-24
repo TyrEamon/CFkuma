@@ -47,11 +47,15 @@ export default function OverallStatus({
   const [currentTime, setCurrentTime] = useState(Math.round(Date.now() / 1000))
   const isWindowVisible = useWindowVisibility()
   const [expandUpcoming, setExpandUpcoming] = useState(false)
+  const reloadStaleSeconds = Math.max(
+    300,
+    ...monitors.map((monitor) => Math.max(1, monitor.checkInterval ?? 1) * 60 + 120)
+  )
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isWindowVisible) return
-      if (currentTime - state.lastUpdate > 300 && currentTime - openTime > 30) {
+      if (currentTime - state.lastUpdate > reloadStaleSeconds && currentTime - openTime > 30) {
         window.location.reload()
       }
       setCurrentTime(Math.round(Date.now() / 1000))
@@ -88,12 +92,6 @@ export default function OverallStatus({
       <Center>{icon}</Center>
       <Title mt="sm" style={{ textAlign: 'center' }} order={1}>
         {statusString}
-      </Title>
-      <Title mt="sm" style={{ textAlign: 'center', color: '#70778c' }} order={5}>
-        {t('Last updated on', {
-          date: new Date(state.lastUpdate * 1000).toLocaleString(),
-          seconds: currentTime - state.lastUpdate,
-        })}
       </Title>
 
       <StatsOverview monitors={monitors} state={state} />

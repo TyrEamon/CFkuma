@@ -30,14 +30,49 @@ const Worker = {
     // Parallel check multiple monitors
     // Max concurrent connection is 6 limited by Cloudflare Workers, we use 5 here to be safe
     type CheckResult = { id: string; location: string; status: { ping: number; up: boolean; err: string } }
+    const getCheckIntervalSeconds = (monitor: MonitorTarget) => Math.max(1, Math.round(monitor.checkInterval ?? 1)) * 60
+    const getLastKnownCheckResult = (monitor: MonitorTarget): CheckResult | null => {
+      if (state.incidentLen(monitor.id) === 0) return null
+
+      const latestIncident = state.getIncident(monitor.id, state.incidentLen(monitor.id) - 1)
+      const latestLatency = state.latencyLen(monitor.id) > 0 ? state.getLastLatency(monitor.id) : null
+      const up = latestIncident.end !== null
+      return {
+        id: monitor.id,
+        location: latestLatency?.loc ?? workerLocation,
+        status: {
+          ping: latestLatency?.ping ?? 0,
+          up,
+          err: up ? '' : latestIncident.error.slice(-1)[0] ?? 'Unknown',
+        },
+      }
+    }
+    const shouldCheckMonitor = (monitor: MonitorTarget) => {
+      if (state.incidentLen(monitor.id) === 0 || state.latencyLen(monitor.id) === 0) return true
+
+      const latestLatency = state.getLastLatency(monitor.id)
+      return currentTimeSecond - latestLatency.time >= getCheckIntervalSeconds(monitor) - 10
+    }
     let checkQueue: Promise<CheckResult>[] = []
     let checkResult: Record<string, CheckResult> = {};
+    const checkedMonitorIds = new Set<string>()
     const limit = pLimit(5);
-    for (const monitor of runtimeWorkerConfig.monitors) {
+    const monitorsToCheck = runtimeWorkerConfig.monitors.filter(shouldCheckMonitor)
+    for (const monitor of monitorsToCheck) {
+      checkedMonitorIds.add(monitor.id)
       checkQueue.push(limit(() => doMonitor(monitor, workerLocation, env)))
     }
     for (const result of await Promise.all(checkQueue)) {
       checkResult[result.id] = result
+    }
+    for (const monitor of runtimeWorkerConfig.monitors) {
+      if (checkedMonitorIds.has(monitor.id)) continue
+
+      const lastKnownResult = getLastKnownCheckResult(monitor)
+      if (lastKnownResult) checkResult[monitor.id] = lastKnownResult
+      console.log(
+        `[${monitor.id}] Skipping check; interval ${Math.round(getCheckIntervalSeconds(monitor) / 60)}m not reached.`
+      )
     }
 
     // Update each monitor's state based on check results
@@ -45,10 +80,19 @@ const Worker = {
       console.log(`Processing monitor result: ${monitor.name} (${monitor.id})`)
 
       let monitorStatusChanged = false
-      const { location: checkLocation, status } = checkResult[monitor.id]
+      const result = checkResult[monitor.id]
+      if (!result) {
+        console.log(`[${monitor.id}] No current or previous check result, skipping state processing.`)
+        continue
+      }
+
+      const { location: checkLocation, status } = result
+      const didCheck = checkedMonitorIds.has(monitor.id)
 
       // Update counters
       status.up ? state.data.overallUp++ : state.data.overallDown++
+
+      if (!didCheck) continue
 
       // Update incidents
       // Create a dummy incident to store the start time of the monitoring and simplify logic
@@ -241,6 +285,7 @@ const Worker = {
     // Allow for a cooldown period before writing to storage
     if (
       statusChanged ||
+      checkedMonitorIds.size > 0 ||
       currentTimeSecond - state.data.lastUpdate >=
         (runtimeWorkerConfig.kvWriteCooldownMinutes ?? 3) * 60 - 10 // Allow for 10 seconds of clock drift
     ) {

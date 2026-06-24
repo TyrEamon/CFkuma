@@ -14,6 +14,7 @@ export type AdminMonitor = {
   target: string
   expectedCodes: string
   timeout: number
+  checkInterval: number
   group: string
   icon: string
   enabled: boolean
@@ -48,6 +49,7 @@ function monitorToAdminMonitor(monitor: MonitorTarget, group = '项目'): AdminM
     target: monitor.target,
     expectedCodes: monitor.expectedCodes?.join(',') ?? '200',
     timeout: monitor.timeout ?? 10000,
+    checkInterval: monitor.checkInterval ?? 1,
     group,
     icon: monitor.icon ?? 'world',
     enabled: true,
@@ -127,6 +129,7 @@ function normalizeMonitor(value: any): AdminMonitor | null {
     target,
     expectedCodes: method === 'TCP_PING' ? '' : normalizeExpectedCodes(value?.expectedCodes).join(','),
     timeout: normalizeNumber(value?.timeout, method === 'TCP_PING' ? 5000 : 10000, 1000, 60000),
+    checkInterval: normalizeNumber(value?.checkInterval, 1, 1, 1440),
     group: normalizeText(value?.group, '未分组'),
     icon: normalizeText(value?.icon, 'world'),
     enabled: value?.enabled !== false,
@@ -188,6 +191,7 @@ export function adminMonitorToMonitorTarget(monitor: AdminMonitor): MonitorTarge
     category: monitor.category,
     icon: monitor.icon,
     timeout: monitor.timeout,
+    checkInterval: monitor.checkInterval,
   }
 
   const expectedCodes = normalizeExpectedCodes(monitor.expectedCodes)

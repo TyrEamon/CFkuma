@@ -99,6 +99,7 @@ export async function getServerSideProps() {
     if (monitor.statusPageLink !== undefined) clientMonitor.statusPageLink = monitor.statusPageLink
     if (monitor.icon !== undefined) clientMonitor.icon = monitor.icon
     if (monitor.category !== undefined) clientMonitor.category = monitor.category
+    if (monitor.checkInterval !== undefined) clientMonitor.checkInterval = monitor.checkInterval
     if (monitor.hideLatencyChart !== undefined) {
       clientMonitor.hideLatencyChart = monitor.hideLatencyChart
     }

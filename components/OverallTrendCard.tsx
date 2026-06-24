@@ -154,11 +154,21 @@ export default function OverallTrendCard({
           )}
         </svg>
 
-        <Group gap={4} wrap="nowrap" align="flex-end" mt="xs" style={{ height: 34 }}>
+        <Box mt="xs" style={{ overflowX: 'auto', paddingBottom: 2 }}>
+          <Box
+            style={{
+              minWidth: 720,
+              display: 'grid',
+              gridTemplateColumns: `repeat(${BUCKET_COUNT}, minmax(0, 1fr))`,
+              gap: 4,
+              alignItems: 'end',
+            }}
+          >
           {buckets.map((bucket) => {
             const value = bucket.availability
             const color = value === null ? '#94a3b8' : getColor(value, false)
             const height = value === null ? 8 : 8 + Math.round((value / 100) * 24)
+            const label = value === null ? '--' : `${formatAvailability(value)}%`
             return (
               <Tooltip
                 key={bucket.start}
@@ -173,18 +183,44 @@ export default function OverallTrendCard({
               >
                 <Box
                   style={{
-                    flex: 1,
-                    minWidth: 4,
-                    height,
-                    borderRadius: 4,
-                    background: color,
-                    opacity: value === null ? 0.28 : 0.62 + (height / 32) * 0.32,
+                    minWidth: 0,
+                    display: 'grid',
+                    gridTemplateRows: '18px 34px',
+                    alignItems: 'end',
+                    justifyItems: 'stretch',
                   }}
-                />
+                >
+                  <Text
+                    component="span"
+                    c={value === null ? 'dimmed' : undefined}
+                    style={{
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      textAlign: 'center',
+                      textOverflow: 'clip',
+                      whiteSpace: 'nowrap',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      lineHeight: '14px',
+                    }}
+                  >
+                    {label}
+                  </Text>
+                  <Box
+                    aria-hidden
+                    style={{
+                      height,
+                      borderRadius: 4,
+                      background: color,
+                      opacity: value === null ? 0.28 : 0.62 + (height / 32) * 0.32,
+                    }}
+                  />
+                </Box>
               </Tooltip>
             )
           })}
-        </Group>
+          </Box>
+        </Box>
       </Box>
 
       <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm" mt="md">

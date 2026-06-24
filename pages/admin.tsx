@@ -84,6 +84,7 @@ const emptyMonitor: AdminMonitor = {
   target: '',
   expectedCodes: '200',
   timeout: 10000,
+  checkInterval: 1,
   group: '项目',
   icon: 'world',
   enabled: true,
@@ -126,6 +127,7 @@ function normalizeMonitorDraft(draft: AdminMonitor): AdminMonitor | null {
     target,
     expectedCodes: draft.method === 'TCP_PING' ? '' : draft.expectedCodes.trim(),
     timeout: Number(draft.timeout) || (draft.method === 'TCP_PING' ? 5000 : 10000),
+    checkInterval: Number(draft.checkInterval) || 1,
     group: draft.group.trim() || '未分组',
   }
 }
@@ -535,6 +537,7 @@ export default function AdminPage() {
                   <TextInput
                     label="期望状态码"
                     placeholder="200,301,302"
+                    description={draft.method === 'TCP_PING' ? undefined : '实际状态码由目标服务返回，多个可用状态码用逗号分隔。'}
                     value={draft.method === 'TCP_PING' ? '' : draft.expectedCodes}
                     disabled={draft.method === 'TCP_PING'}
                     onChange={(event) => updateDraft('expectedCodes', event.currentTarget.value)}
@@ -546,6 +549,15 @@ export default function AdminPage() {
                     step={500}
                     value={draft.timeout}
                     onChange={(value) => updateDraft('timeout', Number(value) || 10000)}
+                    radius="md"
+                  />
+                  <NumberInput
+                    label="测活频率 min"
+                    min={1}
+                    max={1440}
+                    step={1}
+                    value={draft.checkInterval}
+                    onChange={(value) => updateDraft('checkInterval', Number(value) || 1)}
                     radius="md"
                   />
                   <TextInput
@@ -629,6 +641,9 @@ export default function AdminPage() {
                         </Text>
                         <Text size="xs" c="dimmed">
                           {monitor.group}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {monitor.checkInterval} min
                         </Text>
                       </div>
                       <Group gap="xs" wrap="nowrap" justify="flex-end">
