@@ -88,13 +88,6 @@ export default function Header({
     <header className={classes.header} style={style}>
       <Container size="xl" className={classes.inner}>
         <div className={classes.brand}>
-          <time
-            className={classes.clock}
-            dateTime={clockTime || undefined}
-            aria-label={`Current time ${visibleClockTime}`}
-          >
-            {visibleClockTime}
-          </time>
           <a
             className={classes.logoLink}
             href={isHome ? 'https://github.com/TyrEamon/CFkuma' : '/'}
@@ -109,6 +102,13 @@ export default function Header({
               alt="logo"
             />
           </a>
+          <time
+            className={classes.clock}
+            dateTime={clockTime || undefined}
+            aria-label={`Current time ${visibleClockTime}`}
+          >
+            {visibleClockTime}
+          </time>
         </div>
 
         <Group gap="xs" wrap="nowrap" className={classes.navWrap}>

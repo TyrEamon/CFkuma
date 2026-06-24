@@ -33,7 +33,7 @@ html[data-cfkuma-skin='aurora'] .header {
 }
 
 .clock {
-  order: 0;
+  order: 1;
   height: rem(34px);
   min-width: rem(86px);
   display: inline-flex;
@@ -60,7 +60,7 @@ html[data-cfkuma-skin='aurora'] .header {
 }
 
 .logoLink {
-  order: 1;
+  order: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
