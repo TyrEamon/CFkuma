@@ -53,5 +53,14 @@
   "Open admin console": "Open admin console",
   "Theme controls": "主题控制",
   "Plain skin": "纯净皮肤",
-  "Aurora skin": "背景皮肤"
+  "Aurora skin": "背景皮肤",
+  "Availability trend": "Availability trend",
+  "Last 24 hours": "Last 24 hours",
+  "Trend improved": "Trend improved",
+  "Trend degraded": "Trend degraded",
+  "Trend stable": "Trend stable",
+  "No trend data yet": "No trend data yet",
+  "Window availability": "Window availability",
+  "Downtime minutes": "Downtime minutes",
+  "Tracked checks": "Tracked checks"
 }

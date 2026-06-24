@@ -3,6 +3,7 @@ import { Center, Collapse, Container, Title } from '@mantine/core'
 import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import MaintenanceAlert from './MaintenanceAlert'
+import OverallTrendCard from './OverallTrendCard'
 import StatsOverview from './StatsOverview'
 import { useTranslation } from 'react-i18next'
 
@@ -124,13 +125,17 @@ export default function OverallStatus({
       )}
 
       {/* Active Maintenance */}
-      {activeMaintenances.map((maintenance, idx) => (
-        <MaintenanceAlert
-          key={`active-${idx}`}
-          maintenance={maintenance}
-          style={{ maxWidth: '100%' }}
-        />
-      ))}
+      {activeMaintenances.length > 0 ? (
+        activeMaintenances.map((maintenance, idx) => (
+          <MaintenanceAlert
+            key={`active-${idx}`}
+            maintenance={maintenance}
+            style={{ maxWidth: '100%' }}
+          />
+        ))
+      ) : (
+        <OverallTrendCard monitors={monitors} state={state} />
+      )}
     </Container>
   )
 }

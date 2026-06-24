@@ -33,5 +33,14 @@
   "All": "Tous",
   "Select monitor": "Sélectionner un moniteur",
   "Backwards": "← Précédent",
-  "Forward": "Suivant →"
+  "Forward": "Suivant →",
+  "Availability trend": "Availability trend",
+  "Last 24 hours": "Last 24 hours",
+  "Trend improved": "Trend improved",
+  "Trend degraded": "Trend degraded",
+  "Trend stable": "Trend stable",
+  "No trend data yet": "No trend data yet",
+  "Window availability": "Window availability",
+  "Downtime minutes": "Downtime minutes",
+  "Tracked checks": "Tracked checks"
 }

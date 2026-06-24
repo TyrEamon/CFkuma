@@ -31,12 +31,14 @@ import {
   IconLayoutDashboard,
   IconLink,
   IconPhoto,
+  IconPencil,
   IconPlus,
   IconRefresh,
   IconSettings,
   IconShield,
   IconTrash,
   IconWorld,
+  IconX,
 } from '@tabler/icons-react'
 import classes from '@/styles/Admin.module.css'
 import {
@@ -109,6 +111,45 @@ function normalizeId(value: string) {
     .replace(/^_+|_+$/g, '')
 }
 
+function normalizeMonitorDraft(draft: AdminMonitor): AdminMonitor | null {
+  const id = normalizeId(draft.id || draft.name)
+  const name = draft.name.trim()
+  const target = draft.target.trim()
+  if (!id || !name || !target) return null
+
+  return {
+    ...draft,
+    id,
+    name,
+    target,
+    expectedCodes: draft.method === 'TCP_PING' ? '' : draft.expectedCodes.trim(),
+    timeout: Number(draft.timeout) || (draft.method === 'TCP_PING' ? 5000 : 10000),
+    group: draft.group.trim() || '未分组',
+  }
+}
+
+function upsertMonitorDraft(
+  current: AdminMonitor[],
+  nextMonitor: AdminMonitor,
+  editingMonitorId: string | null
+) {
+  if (!editingMonitorId) {
+    return [nextMonitor, ...current.filter((monitor) => monitor.id !== nextMonitor.id)]
+  }
+
+  const withoutConflicts = current.filter(
+    (monitor) => monitor.id === editingMonitorId || monitor.id !== nextMonitor.id
+  )
+  let replaced = false
+  const updated = withoutConflicts.map((monitor) => {
+    if (monitor.id !== editingMonitorId) return monitor
+    replaced = true
+    return nextMonitor
+  })
+
+  return replaced ? updated : [nextMonitor, ...withoutConflicts]
+}
+
 function MonitorTypeIcon({ category }: { category: AdminMonitorCategory }) {
   const iconMap = {
     website: IconWorld,
@@ -134,6 +175,7 @@ export default function AdminPage() {
   const [section, setSection] = useState('monitors')
   const [monitors, setMonitors] = useState(defaultConfig.monitors)
   const [draft, setDraft] = useState<AdminMonitor>(emptyMonitor)
+  const [editingMonitorId, setEditingMonitorId] = useState<string | null>(null)
   const [appearance, setAppearance] = useState<AdminAppearance>(defaultConfig.appearance)
   const [copiedPreviewLink, setCopiedPreviewLink] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(true)
@@ -165,6 +207,8 @@ export default function AdminPage() {
       const payload = (await response.json()) as { config: AdminConfig }
       setAppearance(payload.config.appearance)
       setMonitors(payload.config.monitors)
+      setDraft(emptyMonitor)
+      setEditingMonitorId(null)
       if (silent) setStatusMessage('已同步 D1 配置。')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '读取配置失败')
@@ -199,24 +243,32 @@ export default function AdminPage() {
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
-  const addMonitor = () => {
-    const id = normalizeId(draft.id || draft.name)
-    if (!id || !draft.name.trim() || !draft.target.trim()) return
-
-    const nextMonitor = {
-      ...draft,
-      id,
-      name: draft.name.trim(),
-      target: draft.target.trim(),
-      group: draft.group.trim() || '未分组',
-    }
-
-    setMonitors((current) => [nextMonitor, ...current.filter((monitor) => monitor.id !== id)])
+  const resetDraft = (clearStatus = true) => {
     setDraft(emptyMonitor)
+    setEditingMonitorId(null)
+    if (clearStatus) setStatusMessage('')
+  }
+
+  const editMonitor = (monitor: AdminMonitor) => {
+    setDraft({ ...monitor })
+    setEditingMonitorId(monitor.id)
+    setSection('monitors')
+    setStatusMessage('正在编辑监控，修改后点击“保存修改”，再保存配置到 D1。')
+  }
+
+  const addMonitor = () => {
+    const nextMonitor = normalizeMonitorDraft(draft)
+    if (!nextMonitor) return
+
+    const wasEditing = Boolean(editingMonitorId)
+    setMonitors((current) => upsertMonitorDraft(current, nextMonitor, editingMonitorId))
+    resetDraft(false)
+    setStatusMessage(wasEditing ? '已更新监控草稿，点击“保存配置”写入 D1。' : '已添加监控草稿，点击“保存配置”写入 D1。')
   }
 
   const removeMonitor = (id: string) => {
     setMonitors((current) => current.filter((monitor) => monitor.id !== id))
+    if (editingMonitorId === id) resetDraft()
   }
 
   const toggleMonitor = (id: string) => {
@@ -225,6 +277,9 @@ export default function AdminPage() {
         monitor.id === id ? { ...monitor, enabled: !monitor.enabled } : monitor
       )
     )
+    if (editingMonitorId === id) {
+      setDraft((current) => ({ ...current, enabled: !current.enabled }))
+    }
   }
 
   const saveConfig = async () => {
@@ -233,16 +288,26 @@ export default function AdminPage() {
     setErrorMessage('')
 
     try {
+      const pendingMonitor = editingMonitorId ? normalizeMonitorDraft(draft) : null
+      if (editingMonitorId && !pendingMonitor) {
+        throw new Error('请先补全监控名称和目标地址。')
+      }
+      const monitorsToSave = pendingMonitor
+        ? upsertMonitorDraft(monitors, pendingMonitor, editingMonitorId)
+        : monitors
+
       const response = await fetch('/api/admin/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config: currentConfig }),
+        body: JSON.stringify({ config: { ...currentConfig, monitors: monitorsToSave } }),
       })
       const payload = (await response.json()) as { config?: AdminConfig; error?: string }
       if (!response.ok || !payload.config) throw new Error(payload.error ?? `保存失败：${response.status}`)
 
       setAppearance(payload.config.appearance)
       setMonitors(payload.config.monitors)
+      setDraft(emptyMonitor)
+      setEditingMonitorId(null)
       setStatusMessage('已保存到 D1。下一次 Worker 定时任务会使用这份监控配置。')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '保存失败')
@@ -407,7 +472,7 @@ export default function AdminPage() {
                     <Text size="xs" fw={700} c="teal">
                       MONITORS
                     </Text>
-                    <h2>添加监控</h2>
+                    <h2>{editingMonitorId ? '编辑监控' : '添加监控'}</h2>
                   </div>
                   <SegmentedControl
                     radius="md"
@@ -489,9 +554,25 @@ export default function AdminPage() {
                       checked={draft.enabled}
                       onChange={(event) => updateDraft('enabled', event.currentTarget.checked)}
                     />
-                    <Button leftSection={<IconPlus size={16} />} onClick={addMonitor} radius="md">
-                      添加
-                    </Button>
+                    <Group gap="xs" wrap="nowrap">
+                      {editingMonitorId && (
+                        <Button
+                          variant="default"
+                          leftSection={<IconX size={16} />}
+                          onClick={() => resetDraft()}
+                          radius="md"
+                        >
+                          取消
+                        </Button>
+                      )}
+                      <Button
+                        leftSection={editingMonitorId ? <IconDeviceFloppy size={16} /> : <IconPlus size={16} />}
+                        onClick={addMonitor}
+                        radius="md"
+                      >
+                        {editingMonitorId ? '保存修改' : '添加'}
+                      </Button>
+                    </Group>
                   </div>
                 </div>
               </section>
@@ -516,7 +597,11 @@ export default function AdminPage() {
 
                 <div className={classes.monitorList}>
                   {monitors.map((monitor) => (
-                    <article className={classes.monitorRow} key={monitor.id}>
+                    <article
+                      className={classes.monitorRow}
+                      data-editing={editingMonitorId === monitor.id || undefined}
+                      key={monitor.id}
+                    >
                       <Group gap="sm" wrap="nowrap" className={classes.monitorIdentity}>
                         <MonitorTypeIcon category={monitor.category} />
                         <div>
@@ -540,6 +625,17 @@ export default function AdminPage() {
                         </Text>
                       </div>
                       <Group gap="xs" wrap="nowrap" justify="flex-end">
+                        <Tooltip label="编辑">
+                          <ActionIcon
+                            variant="subtle"
+                            color="blue"
+                            radius="md"
+                            onClick={() => editMonitor(monitor)}
+                            aria-label={`Edit ${monitor.name}`}
+                          >
+                            <IconPencil size={17} />
+                          </ActionIcon>
+                        </Tooltip>
                         <Switch
                           checked={monitor.enabled}
                           onChange={() => toggleMonitor(monitor.id)}
