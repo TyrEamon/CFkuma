@@ -4,6 +4,7 @@ import {
   Container,
   Group,
   Image,
+  Menu,
   Tooltip,
   rem,
   useComputedColorScheme,
@@ -13,7 +14,7 @@ import classes from '@/styles/Header.module.css'
 import { pageConfig } from '@/uptime.config'
 import { PageConfig, PageConfigLink } from '@/types/config'
 import { useCfkumaTheme } from '@/util/theme'
-import { IconMoon, IconPhoto, IconSettings, IconSparkles, IconSun } from '@tabler/icons-react'
+import { IconMenu2, IconMoon, IconPhoto, IconSettings, IconSparkles, IconSun } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 function formatClockTime(date: Date) {
@@ -47,6 +48,22 @@ export default function Header({
       >
         {link.label}
       </a>
+    )
+  }
+  const linkToMenuItem = (link: PageConfigLink, i: number) => {
+    const isExternal = !link.link.startsWith('/')
+    return (
+      <Menu.Item
+        key={i}
+        component="a"
+        href={link.link}
+        target={isExternal ? '_blank' : undefined}
+        rel={isExternal ? 'noreferrer' : undefined}
+        className={classes.mobileMenuItem}
+        data-active={link.highlight}
+      >
+        {link.label}
+      </Menu.Item>
     )
   }
 
@@ -99,10 +116,6 @@ export default function Header({
             {links?.map(linkToElement)}
           </Group>
 
-          <Group gap={4} hiddenFrom="sm" className={classes.links} wrap="nowrap">
-            {links?.filter((link) => link.highlight || link.link.startsWith('/')).map(linkToElement)}
-          </Group>
-
           <Group gap={4} wrap="nowrap" className={classes.themeControls}>
             <Tooltip label={colorSchemeLabel} withArrow>
               <ActionIcon
@@ -130,6 +143,26 @@ export default function Header({
                 <SkinIcon style={{ width: rem(18), height: rem(18) }} />
               </ActionIcon>
             </Tooltip>
+
+            <div className={classes.mobileNavMenu}>
+              <Menu width={184} position="bottom-end" offset={8} shadow="md" withinPortal>
+                <Menu.Target>
+                  <ActionIcon
+                    aria-label="Open navigation menu"
+                    className="cfkuma-glass-control"
+                    variant="default"
+                    color="gray"
+                    size="lg"
+                    radius="md"
+                  >
+                    <IconMenu2 style={{ width: rem(18), height: rem(18) }} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown className={classes.mobileMenuDropdown}>
+                  {links?.map(linkToMenuItem)}
+                </Menu.Dropdown>
+              </Menu>
+            </div>
 
             <Tooltip label={adminLabel} withArrow>
               <ActionIcon
