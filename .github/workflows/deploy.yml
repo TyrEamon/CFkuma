@@ -102,10 +102,31 @@ jobs:
           TF_VAR_PASSWORD_PROTECTION: ${{ secrets.PASSWORD_PROTECTION }}
           D1_ID: ${{ env.D1_ID }}
 
+      - name: Sync Pages secrets
+        run: |
+          set -euo pipefail
+
+          if [[ -n "${ADMIN_PASSWORD_PROTECTION}" ]]; then
+            printf '%s' "${ADMIN_PASSWORD_PROTECTION}" | npx wrangler pages secret put ADMIN_PASSWORD_PROTECTION --project-name uptimeflare
+          else
+            echo "ADMIN_PASSWORD_PROTECTION GitHub Secret is empty; leaving existing Cloudflare Pages secret unchanged."
+          fi
+
+          if [[ -n "${PASSWORD_PROTECTION}" ]]; then
+            printf '%s' "${PASSWORD_PROTECTION}" | npx wrangler pages secret put PASSWORD_PROTECTION --project-name uptimeflare
+          else
+            echo "PASSWORD_PROTECTION GitHub Secret is empty; leaving existing Cloudflare Pages secret unchanged."
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ steps.fetch_account_id.outputs.account_id }}
+          ADMIN_PASSWORD_PROTECTION: ${{ secrets.ADMIN_PASSWORD_PROTECTION }}
+          PASSWORD_PROTECTION: ${{ secrets.PASSWORD_PROTECTION }}
+
       # Currently Terraform Cloudflare provider doesn't support direct upload, use wrangler to upload instead.
       - name: Upload pages
         run: |
-          npx wrangler pages deploy .vercel/output/static --project-name uptimeflare
+          npx wrangler pages deploy .vercel/output/static --project-name uptimeflare --branch main
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ steps.fetch_account_id.outputs.account_id }}
