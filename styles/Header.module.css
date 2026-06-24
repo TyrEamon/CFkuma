@@ -23,14 +23,17 @@ html[data-cfkuma-skin='aurora'] .header {
 }
 
 .brand {
-  flex: 0 1 auto;
-  min-width: rem(92px);
+  flex: 0 0 auto;
+  min-width: 0;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: rem(10px);
+  gap: rem(8px);
+  direction: ltr;
 }
 
 .clock {
+  order: 0;
   height: rem(34px);
   min-width: rem(86px);
   display: inline-flex;
@@ -57,8 +60,17 @@ html[data-cfkuma-skin='aurora'] .header {
 }
 
 .logoLink {
+  order: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: rem(56px);
+  height: rem(56px);
+}
+
+.logoImage {
+  display: block;
   flex: 0 0 auto;
 }
 
@@ -119,7 +131,7 @@ html[data-cfkuma-skin='aurora'] .link:hover {
   }
 
   .brand {
-    gap: rem(7px);
+    gap: rem(6px);
   }
 
   .clock {
@@ -127,6 +139,11 @@ html[data-cfkuma-skin='aurora'] .link:hover {
     height: rem(30px);
     padding: 0 rem(7px);
     font-size: rem(12px);
+  }
+
+  .logoLink {
+    width: rem(44px);
+    height: rem(44px);
   }
 }
 html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .header {

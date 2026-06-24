@@ -84,9 +84,10 @@ export default function Header({
             target={isHome ? '_blank' : undefined}
           >
             <Image
+              className={classes.logoImage}
               src={config.logo ?? '/logo.svg'}
-              h={56}
-              w={{ base: 122, sm: 190 }}
+              h={{ base: 44, sm: 56 }}
+              w={{ base: 44, sm: 56 }}
               fit="contain"
               alt="logo"
             />
