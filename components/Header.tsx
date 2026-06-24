@@ -12,7 +12,7 @@ import classes from '@/styles/Header.module.css'
 import { pageConfig } from '@/uptime.config'
 import { PageConfig, PageConfigLink } from '@/types/config'
 import { useCfkumaTheme } from '@/util/theme'
-import { IconMoon, IconPhoto, IconSparkles, IconSun } from '@tabler/icons-react'
+import { IconMoon, IconPhoto, IconSettings, IconSparkles, IconSun } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 export default function Header({
@@ -50,13 +50,14 @@ export default function Header({
   const ColorSchemeIcon = computedColorScheme === 'dark' ? IconSun : IconMoon
   const skinLabel = skin === 'aurora' ? t('Switch to plain skin') : t('Switch to aurora skin')
   const SkinIcon = skin === 'aurora' ? IconPhoto : IconSparkles
+  const adminLabel = t('Open admin console')
 
   return (
     <header className={classes.header} style={style}>
       <Container size="xl" className={classes.inner}>
         <div className={classes.brand}>
           <a
-            href={isHome ? 'https://github.com/lyc8503/UptimeFlare' : '/'}
+            href={isHome ? 'https://github.com/TyrEamon/CFkuma' : '/'}
             target={isHome ? '_blank' : undefined}
           >
             <Image
@@ -103,6 +104,21 @@ export default function Header({
                 onClick={toggleSkin}
               >
                 <SkinIcon style={{ width: rem(18), height: rem(18) }} />
+              </ActionIcon>
+            </Tooltip>
+
+            <Tooltip label={adminLabel} withArrow>
+              <ActionIcon
+                aria-label={adminLabel}
+                className="cfkuma-glass-control"
+                component="a"
+                href="/admin"
+                variant="default"
+                color="gray"
+                size="lg"
+                radius="md"
+              >
+                <IconSettings style={{ width: rem(18), height: rem(18) }} />
               </ActionIcon>
             </Tooltip>
           </Group>

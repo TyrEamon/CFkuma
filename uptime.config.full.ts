@@ -2,12 +2,12 @@ import { MaintenanceConfig, PageConfig, WorkerConfig } from './types/config'
 
 const pageConfig: PageConfig = {
   // Title for your status page
-  title: "lyc8503's Status Page",
+  title: "Tyr's state pages",
   // Links shown at the header of your status page, could set `highlight` to `true`
   links: [
-    { link: 'https://github.com/lyc8503', label: 'GitHub' },
-    { link: 'https://blog.lyc8503.net/', label: 'Blog' },
-    { link: 'mailto:me@lyc8503.net', label: 'Email Me', highlight: true },
+    { link: 'https://github.com/TyrEamon/CFkuma', label: 'GitHub' },
+    { link: 'https://blogs.mtcacg.top', label: 'Blog' },
+    { link: 'mailto:tyreamon@gmail.com', label: 'Email Me', highlight: true },
   ],
   // [OPTIONAL] Group your monitors
   // If not specified, all monitors will be shown in a single list
@@ -19,7 +19,7 @@ const pageConfig: PageConfig = {
   // [OPTIONAL] Set the path to your favicon, default to '/favicon.png' if not specified
   // favicon: 'https://example.com/favicon.ico',
   // [OPTIONAL] Set the path to your logo, default to '/logo.svg' if not specified
-  // logo: 'https://example.com/logo.svg',
+  logo: '/tyr-logo.jpg',
   // [OPTIONAL] Maintenance related settings
   maintenances: {
     // [OPTIONAL] The color of upcoming maintenance alerts, default to 'gray'

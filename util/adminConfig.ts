@@ -35,6 +35,8 @@ export type AdminConfig = {
 }
 
 const DEFAULT_BACKGROUND_URL = 'https://rapi.mtcacg.top/ri/h/1347.webp'
+const LEGACY_DEFAULT_TITLES = new Set(["lyc8503's Status Page", 'CFkuma Status'])
+const LEGACY_DEFAULT_LOGOS = new Set(['/logo.svg'])
 
 function monitorToAdminMonitor(monitor: MonitorTarget, group = '项目'): AdminMonitor {
   return {
@@ -135,6 +137,16 @@ function normalizeUrlLike(value: unknown, fallback: string) {
   return fallback
 }
 
+function normalizeAppearanceTitle(value: unknown, fallback: string) {
+  const title = normalizeText(value, fallback)
+  return LEGACY_DEFAULT_TITLES.has(title) ? fallback : title
+}
+
+function normalizeAppearanceLogo(value: unknown, fallback: string) {
+  const logo = normalizeUrlLike(value, fallback)
+  return LEGACY_DEFAULT_LOGOS.has(logo) ? fallback : logo
+}
+
 export function normalizeAdminConfig(value: unknown): AdminConfig {
   const fallback = createDefaultAdminConfig()
   const raw = (value && typeof value === 'object' ? value : {}) as any
@@ -151,8 +163,8 @@ export function normalizeAdminConfig(value: unknown): AdminConfig {
   return {
     version: 1,
     appearance: {
-      title: normalizeText(appearance.title, fallback.appearance.title),
-      logoUrl: normalizeUrlLike(appearance.logoUrl, fallback.appearance.logoUrl),
+      title: normalizeAppearanceTitle(appearance.title, fallback.appearance.title),
+      logoUrl: normalizeAppearanceLogo(appearance.logoUrl, fallback.appearance.logoUrl),
       backgroundUrl: normalizeUrlLike(appearance.backgroundUrl, fallback.appearance.backgroundUrl),
       backgroundDim: normalizeNumber(appearance.backgroundDim, fallback.appearance.backgroundDim, 20, 82),
       backgroundBlur: normalizeNumber(appearance.backgroundBlur, fallback.appearance.backgroundBlur, 0, 10),

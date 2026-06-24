@@ -1,8 +1,8 @@
 import Head from 'next/head'
 
 import { Inter } from 'next/font/google'
-import { MaintenanceConfig, MonitorTarget } from '@/types/config'
-import { maintenances, pageConfig } from '@/uptime.config'
+import { MaintenanceConfig, MonitorTarget, PageConfig } from '@/types/config'
+import { maintenances } from '@/uptime.config'
 import Header from '@/components/Header'
 import { Box, Button, Center, Container, Group, Select } from '@mantine/core'
 import Footer from '@/components/Footer'
@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react'
 import MaintenanceAlert from '@/components/MaintenanceAlert'
 import NoIncidentsAlert from '@/components/NoIncidents'
 import { useTranslation } from 'react-i18next'
+import { getRuntimeConfig } from '@/util/runtimeConfig'
+import { AdminAppearance } from '@/util/adminConfig'
 
 export const runtime = 'experimental-edge'
 const inter = Inter({ subsets: ['latin'] })
@@ -54,7 +56,14 @@ function getPrevNextMonth(monthStr: string) {
   }
 }
 
-export default function IncidentsPage({ monitors }: { monitors: MonitorTarget[] }) {
+export default function IncidentsPage({
+  monitors,
+  runtimePageConfig,
+}: {
+  monitors: MonitorTarget[]
+  runtimePageConfig: PageConfig
+  adminAppearance?: AdminAppearance
+}) {
   const { t } = useTranslation('common')
   const [selectedMonitor, setSelectedMonitor] = useState<string | null>('')
   const [selectedMonth, setSelectedMonth] = useState(getSelectedMonth())
@@ -83,12 +92,13 @@ export default function IncidentsPage({ monitors }: { monitors: MonitorTarget[] 
   return (
     <>
       <Head>
-        <title>{pageConfig.title}</title>
-        <link rel="icon" href={pageConfig.favicon ?? '/favicon.png'} />
+        <title>{runtimePageConfig.title}</title>
+        <link rel="icon" href={runtimePageConfig.favicon ?? '/favicon.png'} />
       </Head>
 
       <main className={inter.className}>
         <Header
+          config={runtimePageConfig}
           style={{
             marginBottom: '40px',
           }}
@@ -127,18 +137,24 @@ export default function IncidentsPage({ monitors }: { monitors: MonitorTarget[] 
             </Group>
           </Container>
         </Center>
-        <Footer />
+        <Footer config={runtimePageConfig} />
       </main>
     </>
   )
 }
 
 export async function getServerSideProps() {
-  const { workerConfig } = await import('@/uptime.config')
+  const runtimeConfig = await getRuntimeConfig(process.env as any)
   // Only present these values to client
-  const monitors: MonitorTarget[] = workerConfig.monitors.map((monitor) => ({
+  const monitors: MonitorTarget[] = runtimeConfig.workerConfig.monitors.map((monitor) => ({
     id: monitor.id,
     name: monitor.name,
   })) as MonitorTarget[]
-  return { props: { monitors } }
+  return {
+    props: {
+      monitors,
+      runtimePageConfig: runtimeConfig.pageConfig,
+      adminAppearance: runtimeConfig.adminConfig.appearance,
+    },
+  }
 }
