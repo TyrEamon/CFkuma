@@ -1,6 +1,5 @@
 import { IncidentRecord, MonitorState, MonitorTarget } from '@/types/config'
 import { formatAvailability } from '@/components/monitorMetrics'
-import { getColor } from '@/util/color'
 import { Badge, Box, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon, Tooltip, rem } from '@mantine/core'
 import { IconActivityHeartbeat, IconMinus, IconTrendingDown, IconTrendingUp } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +14,15 @@ type TrendBucket = {
 
 const BUCKET_COUNT = 24
 const BUCKET_SECONDS = 60 * 60
+
+function getTrendBarColor(value: number | null) {
+  if (value === null) return '#94a3b8'
+  if (value < 20) return '#EF4444'
+  if (value < 40) return '#F97316'
+  if (value < 60) return '#EAB308'
+  if (value < 80) return '#84CC16'
+  return '#22C55E'
+}
 
 function overlapLen(x1: number, x2: number, y1: number, y2: number) {
   return Math.max(0, Math.min(x2, y2) - Math.max(x1, y1))
@@ -166,7 +174,7 @@ export default function OverallTrendCard({
           >
           {buckets.map((bucket) => {
             const value = bucket.availability
-            const color = value === null ? '#94a3b8' : getColor(value, false)
+            const color = getTrendBarColor(value)
             const height = value === null ? 8 : 8 + Math.round((value / 100) * 24)
             const label = value === null ? '--' : `${formatAvailability(value)}%`
             return (

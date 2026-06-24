@@ -23,6 +23,8 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
+  IconArrowDown,
+  IconArrowUp,
   IconBell,
   IconBrandGithub,
   IconCheck,
@@ -106,6 +108,10 @@ function categoryColor(category: AdminMonitorCategory) {
   }[category]
 }
 
+function getMonitorGroupName(monitor: Pick<AdminMonitor, 'group'>) {
+  return monitor.group || '未分组'
+}
+
 function normalizeId(value: string) {
   return value
     .trim()
@@ -154,6 +160,46 @@ function upsertMonitorDraft(
   return replaced ? updated : [nextMonitor, ...withoutConflicts]
 }
 
+function reorderGroups(monitors: AdminMonitor[], groupName: string, direction: -1 | 1) {
+  const groupNames = Array.from(new Set(monitors.map(getMonitorGroupName)))
+  const groupIndex = groupNames.indexOf(groupName)
+  const targetIndex = groupIndex + direction
+  if (groupIndex < 0 || targetIndex < 0 || targetIndex >= groupNames.length) return monitors
+
+  const nextGroupNames = [...groupNames]
+  ;[nextGroupNames[groupIndex], nextGroupNames[targetIndex]] = [
+    nextGroupNames[targetIndex],
+    nextGroupNames[groupIndex],
+  ]
+
+  return nextGroupNames.flatMap((nextGroupName) =>
+    monitors.filter((monitor) => getMonitorGroupName(monitor) === nextGroupName)
+  )
+}
+
+function reorderMonitorInGroup(
+  monitors: AdminMonitor[],
+  groupName: string,
+  monitorId: string,
+  direction: -1 | 1
+) {
+  const groupMonitors = monitors.filter((monitor) => getMonitorGroupName(monitor) === groupName)
+  const monitorIndex = groupMonitors.findIndex((monitor) => monitor.id === monitorId)
+  const targetIndex = monitorIndex + direction
+  if (monitorIndex < 0 || targetIndex < 0 || targetIndex >= groupMonitors.length) return monitors
+
+  const nextGroupMonitors = [...groupMonitors]
+  ;[nextGroupMonitors[monitorIndex], nextGroupMonitors[targetIndex]] = [
+    nextGroupMonitors[targetIndex],
+    nextGroupMonitors[monitorIndex],
+  ]
+
+  let nextGroupMonitorIndex = 0
+  return monitors.map((monitor) =>
+    getMonitorGroupName(monitor) === groupName ? nextGroupMonitors[nextGroupMonitorIndex++] : monitor
+  )
+}
+
 function MonitorTypeIcon({ category }: { category: AdminMonitorCategory }) {
   const iconMap = {
     website: IconWorld,
@@ -186,11 +232,17 @@ export default function AdminPage() {
   const [savingConfig, setSavingConfig] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
   const enabledCount = monitors.filter((monitor) => monitor.enabled).length
 
   const groups = useMemo(() => {
-    return Array.from(new Set(monitors.map((monitor) => monitor.group).filter(Boolean)))
+    return Array.from(new Set(monitors.map(getMonitorGroupName)))
   }, [monitors])
+  const selectedGroupIndex = selectedGroup ? groups.indexOf(selectedGroup) : -1
+  const visibleMonitors = selectedGroup
+    ? monitors.filter((monitor) => getMonitorGroupName(monitor) === selectedGroup)
+    : monitors
+  const groupOptions = groups.map((groupName) => ({ value: groupName, label: groupName }))
 
   const currentConfig: AdminConfig = useMemo(
     () => ({
@@ -224,6 +276,15 @@ export default function AdminPage() {
   useEffect(() => {
     void loadConfig()
   }, [])
+
+  useEffect(() => {
+    if (groups.length === 0) {
+      setSelectedGroup(null)
+      return
+    }
+
+    if (!selectedGroup || !groups.includes(selectedGroup)) setSelectedGroup(groups[0])
+  }, [groups, selectedGroup])
 
   const previewLink = useMemo(() => {
     if (typeof window === 'undefined') return ''
@@ -286,6 +347,16 @@ export default function AdminPage() {
     if (editingMonitorId === id) {
       setDraft((current) => ({ ...current, enabled: !current.enabled }))
     }
+  }
+
+  const moveSelectedGroup = (direction: -1 | 1) => {
+    if (!selectedGroup) return
+    setMonitors((current) => reorderGroups(current, selectedGroup, direction))
+  }
+
+  const moveMonitorInSelectedGroup = (monitorId: string, direction: -1 | 1) => {
+    if (!selectedGroup) return
+    setMonitors((current) => reorderMonitorInGroup(current, selectedGroup, monitorId, direction))
   }
 
   const saveConfig = async () => {
@@ -614,8 +685,45 @@ export default function AdminPage() {
                   </Button>
                 </div>
 
+                <div className={classes.listControls}>
+                  <Select
+                    label="分组选择"
+                    data={groupOptions}
+                    value={selectedGroup}
+                    onChange={setSelectedGroup}
+                    disabled={groupOptions.length === 0}
+                    radius="md"
+                  />
+                  <Group gap="xs" wrap="nowrap" align="flex-end" className={classes.orderButtons}>
+                    <Tooltip label="分组上移">
+                      <ActionIcon
+                        variant="default"
+                        radius="md"
+                        size="lg"
+                        disabled={selectedGroupIndex <= 0}
+                        onClick={() => moveSelectedGroup(-1)}
+                        aria-label="Move group up"
+                      >
+                        <IconArrowUp size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="分组下移">
+                      <ActionIcon
+                        variant="default"
+                        radius="md"
+                        size="lg"
+                        disabled={selectedGroupIndex < 0 || selectedGroupIndex >= groups.length - 1}
+                        onClick={() => moveSelectedGroup(1)}
+                        aria-label="Move group down"
+                      >
+                        <IconArrowDown size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </div>
+
                 <div className={classes.monitorList}>
-                  {monitors.map((monitor) => (
+                  {visibleMonitors.map((monitor, monitorIndex) => (
                     <article
                       className={classes.monitorRow}
                       data-editing={editingMonitorId === monitor.id || undefined}
@@ -647,6 +755,30 @@ export default function AdminPage() {
                         </Text>
                       </div>
                       <Group gap="xs" wrap="nowrap" justify="flex-end">
+                        <Tooltip label="项目上移">
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            radius="md"
+                            disabled={monitorIndex === 0}
+                            onClick={() => moveMonitorInSelectedGroup(monitor.id, -1)}
+                            aria-label={`Move ${monitor.name} up`}
+                          >
+                            <IconArrowUp size={16} />
+                          </ActionIcon>
+                        </Tooltip>
+                        <Tooltip label="项目下移">
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            radius="md"
+                            disabled={monitorIndex >= visibleMonitors.length - 1}
+                            onClick={() => moveMonitorInSelectedGroup(monitor.id, 1)}
+                            aria-label={`Move ${monitor.name} down`}
+                          >
+                            <IconArrowDown size={16} />
+                          </ActionIcon>
+                        </Tooltip>
                         <Tooltip label="编辑">
                           <ActionIcon
                             variant="subtle"
