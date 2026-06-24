@@ -25,6 +25,7 @@ export type AdminAppearance = {
   backgroundUrl: string
   backgroundDim: number
   backgroundBlur: number
+  surfaceOpacity: number
 }
 
 export type AdminConfig = {
@@ -36,7 +37,7 @@ export type AdminConfig = {
 
 const DEFAULT_BACKGROUND_URL = 'https://rapi.mtcacg.top/ri/h/1347.webp'
 const LEGACY_DEFAULT_TITLES = new Set(["lyc8503's Status Page", 'CFkuma Status'])
-const LEGACY_DEFAULT_LOGOS = new Set(['/logo.svg'])
+const LEGACY_DEFAULT_LOGOS = new Set(['/logo.svg', '/tyr-logo.jpg'])
 
 function monitorToAdminMonitor(monitor: MonitorTarget, group = '项目'): AdminMonitor {
   return {
@@ -67,6 +68,7 @@ export function createDefaultAdminConfig(): AdminConfig {
       backgroundUrl: DEFAULT_BACKGROUND_URL,
       backgroundDim: 58,
       backgroundBlur: 0,
+      surfaceOpacity: 74,
     },
     monitors: workerConfig.monitors.map((monitor) => monitorToAdminMonitor(monitor, getStaticGroupForMonitor(monitor.id))),
   }
@@ -168,6 +170,7 @@ export function normalizeAdminConfig(value: unknown): AdminConfig {
       backgroundUrl: normalizeUrlLike(appearance.backgroundUrl, fallback.appearance.backgroundUrl),
       backgroundDim: normalizeNumber(appearance.backgroundDim, fallback.appearance.backgroundDim, 20, 82),
       backgroundBlur: normalizeNumber(appearance.backgroundBlur, fallback.appearance.backgroundBlur, 0, 10),
+      surfaceOpacity: normalizeNumber(appearance.surfaceOpacity, fallback.appearance.surfaceOpacity, 35, 95),
     },
     monitors: uniqueMonitors,
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : undefined,

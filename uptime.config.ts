@@ -14,7 +14,8 @@ const pageConfig: PageConfig = {
     { link: 'https://blogs.mtcacg.top', label: 'Blog' },
     { link: 'mailto:tyreamon@gmail.com', label: 'Email Me', highlight: true },
   ],
-  logo: '/tyr-logo.jpg',
+  favicon: '/touming.png',
+  logo: '/touming.png',
 }
 
 const workerConfig: WorkerConfig = {

@@ -8,6 +8,7 @@ import {
   Checkbox,
   Divider,
   Group,
+  Image,
   NumberInput,
   Select,
   SegmentedControl,
@@ -46,6 +47,7 @@ import {
   CFKUMA_BACKGROUND_DIM_QUERY_PARAM,
   CFKUMA_BACKGROUND_QUERY_PARAM,
   CFKUMA_SKIN_QUERY_PARAM,
+  CFKUMA_SURFACE_OPACITY_QUERY_PARAM,
 } from '@/util/theme'
 import {
   AdminAppearance,
@@ -230,6 +232,7 @@ export default function AdminPage() {
     if (backgroundUrl) url.searchParams.set(CFKUMA_BACKGROUND_QUERY_PARAM, backgroundUrl)
     url.searchParams.set(CFKUMA_BACKGROUND_DIM_QUERY_PARAM, String(appearance.backgroundDim))
     url.searchParams.set(CFKUMA_BACKGROUND_BLUR_QUERY_PARAM, String(appearance.backgroundBlur))
+    url.searchParams.set(CFKUMA_SURFACE_OPACITY_QUERY_PARAM, String(appearance.surfaceOpacity))
     return url.toString()
   }, [appearance])
 
@@ -237,6 +240,7 @@ export default function AdminPage() {
     '--admin-preview-bg': `url("${appearance.backgroundUrl}")`,
     '--admin-preview-dim': appearance.backgroundDim / 100,
     '--admin-preview-blur': `${appearance.backgroundBlur}px`,
+    '--admin-preview-surface-opacity': appearance.surfaceOpacity / 100,
   } as React.CSSProperties
 
   const updateDraft = <K extends keyof AdminMonitor>(key: K, value: AdminMonitor[K]) => {
@@ -339,15 +343,18 @@ export default function AdminPage() {
     <>
       <Head>
         <title>CFkuma Admin</title>
+        <link rel="icon" href={appearance.logoUrl || '/touming.png'} />
       </Head>
 
       <main className={classes.shell}>
         <aside className={classes.sidebar}>
           <div className={classes.brandBlock}>
-            <div className={classes.brandMark}>CF</div>
+            <div className={classes.brandMark}>
+              {appearance.logoUrl ? <Image src={appearance.logoUrl} alt="" fit="contain" /> : 'T'}
+            </div>
             <div>
               <Text fw={800} size="lg">
-                CFkuma
+                {appearance.title || 'CFkuma'}
               </Text>
               <Text size="xs" c="dimmed">
                 Admin Console
@@ -737,6 +744,24 @@ export default function AdminPage() {
                       }
                     />
                   </div>
+                  <div>
+                    <Group justify="space-between" mb={6}>
+                      <Text size="sm" fw={500}>
+                        卡片透明度
+                      </Text>
+                      <Text size="sm" c="dimmed">
+                        {appearance.surfaceOpacity}%
+                      </Text>
+                    </Group>
+                    <Slider
+                      min={35}
+                      max={95}
+                      value={appearance.surfaceOpacity}
+                      onChange={(value) =>
+                        setAppearance((current) => ({ ...current, surfaceOpacity: value }))
+                      }
+                    />
+                  </div>
                 </Stack>
               </section>
 
@@ -746,7 +771,7 @@ export default function AdminPage() {
                   <Group justify="space-between" align="center" wrap="nowrap">
                     <Group gap="xs" wrap="nowrap">
                       <div className={classes.previewLogo}>
-                        <IconPhoto size={18} />
+                        {appearance.logoUrl ? <Image src={appearance.logoUrl} alt="" fit="contain" /> : <IconPhoto size={18} />}
                       </div>
                       <Text fw={800}>{appearance.title || 'Status Page'}</Text>
                     </Group>

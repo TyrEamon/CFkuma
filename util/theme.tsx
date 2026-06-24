@@ -8,6 +8,7 @@ export const CFKUMA_SKIN_QUERY_PARAM = 'cfkuma-skin'
 export const CFKUMA_BACKGROUND_QUERY_PARAM = 'cfkuma-bg'
 export const CFKUMA_BACKGROUND_DIM_QUERY_PARAM = 'cfkuma-bg-dim'
 export const CFKUMA_BACKGROUND_BLUR_QUERY_PARAM = 'cfkuma-bg-blur'
+export const CFKUMA_SURFACE_OPACITY_QUERY_PARAM = 'cfkuma-surface-opacity'
 
 // Replace these two URLs when the owner has final background images.
 export const AURORA_BG: Record<'light' | 'dark', string> = {
@@ -28,12 +29,14 @@ type BackgroundOverride = {
   imageUrl?: string
   dim: number
   blur: number
+  surfaceOpacity: number
 }
 
 const DEFAULT_BACKGROUND_OVERRIDE: BackgroundOverride = {
   hasQueryOverride: false,
   dim: 58,
   blur: 0,
+  surfaceOpacity: 74,
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -79,6 +82,7 @@ function getInitialBackgroundOverride(): BackgroundOverride {
     imageUrl: normalizeBackgroundUrl(params.get(CFKUMA_BACKGROUND_QUERY_PARAM)),
     dim: normalizeNumber(params.get(CFKUMA_BACKGROUND_DIM_QUERY_PARAM), 58, 20, 82),
     blur: normalizeNumber(params.get(CFKUMA_BACKGROUND_BLUR_QUERY_PARAM), 0, 0, 10),
+    surfaceOpacity: normalizeNumber(params.get(CFKUMA_SURFACE_OPACITY_QUERY_PARAM), 74, 35, 95),
   }
 }
 
@@ -131,6 +135,11 @@ export function CfkumaThemeProvider({
     const blur = backgroundOverride.hasQueryOverride
       ? backgroundOverride.blur
       : initialAppearance?.backgroundBlur ?? backgroundOverride.blur
+    const surfaceOpacity = (
+      backgroundOverride.hasQueryOverride
+        ? backgroundOverride.surfaceOpacity
+        : initialAppearance?.surfaceOpacity ?? backgroundOverride.surfaceOpacity
+    ) / 100
 
     document.documentElement.style.setProperty('--cfkuma-aurora-bg-light', cssUrl(backgroundUrl))
     document.documentElement.style.setProperty(
@@ -142,6 +151,7 @@ export function CfkumaThemeProvider({
     document.documentElement.style.setProperty('--cfkuma-aurora-dark-overlay-start', darkStart.toFixed(2))
     document.documentElement.style.setProperty('--cfkuma-aurora-dark-overlay-end', darkEnd.toFixed(2))
     document.documentElement.style.setProperty('--cfkuma-aurora-bg-blur', `${blur}px`)
+    document.documentElement.style.setProperty('--cfkuma-surface-opacity', surfaceOpacity.toFixed(2))
 
     try {
       window.localStorage.setItem(CFKUMA_SKIN_STORAGE_KEY, skin)

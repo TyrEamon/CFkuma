@@ -15,6 +15,7 @@ body {
   --cfkuma-aurora-dark-overlay-start: 0.68;
   --cfkuma-aurora-dark-overlay-end: 0.78;
   --cfkuma-aurora-bg-blur: 0px;
+  --cfkuma-surface-opacity: 0.74;
 }
 
 .cfkuma-app-shell {
@@ -102,9 +103,8 @@ html[data-cfkuma-skin='aurora'] .cfkuma-app-shell::before {
 }
 
 html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .cfkuma-surface,
-html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .cfkuma-glass-control,
 html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .mantine-Accordion-item {
-  background-color: rgba(255, 255, 255, 0.74);
+  background-color: rgba(255, 255, 255, var(--cfkuma-surface-opacity, 0.74));
   border-color: rgba(148, 163, 184, 0.38);
   box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
   --cfkuma-card-hover-shadow: 0 18px 46px rgba(15, 23, 42, 0.14);
@@ -112,9 +112,8 @@ html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .mantine-Acco
 }
 
 html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='dark'] .cfkuma-surface,
-html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='dark'] .cfkuma-glass-control,
 html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='dark'] .mantine-Accordion-item {
-  background-color: rgba(15, 23, 42, 0.66);
+  background-color: rgba(15, 23, 42, var(--cfkuma-surface-opacity, 0.66));
   border-color: rgba(203, 213, 225, 0.2);
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22);
   --cfkuma-card-hover-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
@@ -164,4 +163,14 @@ html[data-cfkuma-skin='aurora'] a {
   .cfkuma-glass-control {
     transition: none;
   }
+}
+html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='light'] .cfkuma-glass-control {
+  background-color: rgba(255, 255, 255, 0.78);
+  border-color: rgba(148, 163, 184, 0.34);
+  backdrop-filter: blur(12px) saturate(1.1);
+}
+html[data-cfkuma-skin='aurora'][data-mantine-color-scheme='dark'] .cfkuma-glass-control {
+  background-color: rgba(15, 23, 42, 0.72);
+  border-color: rgba(203, 213, 225, 0.18);
+  backdrop-filter: blur(12px) saturate(1.08);
 }
